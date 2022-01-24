@@ -5,9 +5,9 @@ A rust library for finding installed executables
 use executable_finder::executables;
 
 fn main() {
-    let executables: Vec<String> = executables().unwrap();
+    let executables = executables().unwrap();
     for executable in executables {
-        println!("{}", executable);
+        println!("{:?}", executable);
     }
 }
 ```

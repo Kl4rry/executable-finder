@@ -1,9 +1,11 @@
 [package]
 name = "executable-finder"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Find executables in PATH variable"
+homepage = "https://github.com/Kl4rry/executable-finder"
+repository = "https://github.com/Kl4rry/executable-finder"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
