@@ -1,4 +1,4 @@
-use std::{env, error, fmt, io};
+use std::{env, error, fmt, io, path::PathBuf};
 
 #[cfg(unix)]
 pub mod unix;
@@ -9,6 +9,12 @@ pub use unix::executables;
 mod windows;
 #[cfg(windows)]
 pub use windows::executables;
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Executable {
+    pub name: String,
+    pub path: PathBuf,
+}
 
 #[derive(Debug)]
 pub enum ExeError {
