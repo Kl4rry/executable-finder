@@ -1,7 +1,7 @@
 use std::{env, error, fmt, io, path::PathBuf};
 
 #[cfg(unix)]
-pub mod unix;
+mod unix;
 #[cfg(unix)]
 pub use unix::executables;
 
