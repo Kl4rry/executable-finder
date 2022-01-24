@@ -32,7 +32,7 @@ pub fn executables() -> Result<Vec<Executable>, ExeError> {
                     if let Some(filename) = path.file_name() {
                         let exe = Executable {
                             name: filename.to_string_lossy().to_string(),
-                            path: path,
+                            path,
                         };
                         executables.push(exe);
                     }
