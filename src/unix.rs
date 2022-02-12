@@ -32,8 +32,6 @@ pub fn executables() -> Result<Vec<Executable>, ExeError> {
             }
         }
     }
-
-    executables.sort();
-    executables.dedup();
+    
     Ok(executables)
 }
