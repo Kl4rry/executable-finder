@@ -12,22 +12,22 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         let mut exes = Vec::new();
         if let Ok(dir) = fs::read_dir(path) {
             for entry in dir.flatten() {
-                if let Ok(metdata) = entry.metadata() {
-                    if !metdata.is_file() {
+                if let Ok(metadata) = entry.metadata() {
+                    if !metadata.is_file() {
                         continue;
                     }
-                }
 
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let permissions = metadata.permissions();
-                    if permissions.mode() & 0o111 != 0 {
-                        let exe = Executable {
-                            name: filename.to_string_lossy().to_string(),
-                            path,
-                        };
+                    let path = entry.path();
+                    if let Some(filename) = path.file_name() {
+                        let permissions = metadata.permissions();
+                        if permissions.mode() & 0o111 != 0 {
+                            let exe = Executable {
+                                name: filename.to_string_lossy().to_string(),
+                                path,
+                            };
 
-                        exes.push(exe);
+                            exes.push(exe);
+                        }
                     }
                 }
             }
