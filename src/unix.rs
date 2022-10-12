@@ -12,7 +12,8 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         let mut exes = Vec::new();
         if let Ok(dir) = fs::read_dir(path) {
             for entry in dir.flatten() {
-                if let Ok(metadata) = entry.metadata() {
+                // We need to call metadata on the path to follow symbolic links
+                if let Ok(metadata) = entry.path().metadata() {
                     if !metadata.is_file() {
                         continue;
                     }
@@ -59,4 +60,9 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         });
 
     Ok(executables)
+}
+
+#[test]
+fn test() {
+    executables();
 }
