@@ -2,7 +2,7 @@ use std::{env::VarError, fs, os::unix::fs::PermissionsExt};
 
 use crate::Executable;
 
-pub fn split_paths(path: &str) -> impl Iterator<Item = &str> {
+pub fn split_path(path: &str) -> impl Iterator<Item = &str> {
     path.split(':')
 }
 

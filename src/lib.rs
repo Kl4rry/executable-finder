@@ -10,12 +10,12 @@ use std::{
 #[cfg(unix)]
 mod unix;
 #[cfg(unix)]
-use unix::{search_dir, split_paths};
+use unix::{search_dir, split_path};
 
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-use windows::{search_dir, split_paths};
+use windows::{search_dir, split_path};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Executable {
@@ -28,7 +28,7 @@ pub struct Executable {
 /// **Note:** this does not filter out duplicates
 pub fn executables() -> Result<Vec<Executable>, VarError> {
     let path = env::var("PATH")?;
-    let paths = split_paths(&path);
+    let paths = split_path(&path);
 
     let search_dir = search_dir()?;
 
@@ -56,7 +56,7 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
 pub fn unique_executables() -> Result<HashMap<String, Executable>, VarError> {
     let path = env::var("PATH")?;
 
-    Ok(split_paths(&path)
+    Ok(split_path(&path)
         .filter_map(search_dir()?)
         .fold(HashMap::new(), |mut a, b| {
             a.extend(b.into_iter().map(|e| (e.name.clone(), e)));
