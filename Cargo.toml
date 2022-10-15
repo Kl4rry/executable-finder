@@ -15,3 +15,4 @@ rayon = { version = "1.5.3", optional = true }
 
 [features]
 default = []
+unique-executables = []

@@ -1,3 +1,5 @@
+#[cfg(feature = "unique-executables")]
+use std::collections::HashMap;
 use std::{env, env::VarError, fs, os::unix::fs::PermissionsExt};
 
 #[cfg(feature = "rayon")]
@@ -51,15 +53,34 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         },
     );
     #[cfg(not(feature = "rayon"))]
-    let executables = paths
-        .iter()
-        .filter_map(search_dir)
-        .fold(Vec::new(), |mut a, b| {
+    let executables = paths.iter().filter_map(search_dir).fold(
+        {
+            #[cfg(feature = "unique-executables")]
+            {
+                HashMap::new()
+            }
+            #[cfg(not(feature = "unique-executables"))]
+            {
+                Vec::new()
+            }
+        },
+        |mut a, b| {
+            #[cfg(feature = "unique-executables")]
+            a.extend(b.into_iter().map(|e| (e.name.clone(), e)));
+            #[cfg(not(feature = "unique-executables"))]
             a.extend_from_slice(&b);
             a
-        });
+        },
+    );
 
-    Ok(executables)
+    #[cfg(feature = "unique-executables")]
+    {
+        Ok(executables.into_values().collect())
+    }
+    #[cfg(not(feature = "unique-executables"))]
+    {
+        Ok(executables)
+    }
 }
 
 #[test]
