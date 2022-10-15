@@ -14,4 +14,4 @@ documentation = "https://docs.rs/executable-finder"
 rayon = { version = "1.5.3", optional = true }
 
 [features]
-default = []
+default = ["rayon"]

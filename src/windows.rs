@@ -1,12 +1,12 @@
 use std::{collections::HashSet, env, env::VarError, fs};
 
-#[cfg(feature = "rayon")]
-use rayon::prelude::*;
-
 use crate::Executable;
 
-pub fn executables() -> Result<Vec<Executable>, VarError> {
-    let path = env::var("PATH")?;
+pub fn split_paths(path: &str) -> impl Iterator<Item = &str> {
+    path.split(';')
+}
+
+pub fn search_dir() -> Result<impl Fn(&str) -> Option<Vec<Executable>>, VarError> {
     let pathext = env::var("PATHEXT")?;
 
     let exts: HashSet<String> = pathext
@@ -14,7 +14,7 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         .map(|s| s.trim_start_matches('.').to_string())
         .collect();
 
-    let search_dir = |path: &&str| -> Option<Vec<Executable>> {
+    Ok(move |path: &str| -> Option<Vec<Executable>> {
         let mut exes = Vec::new();
         if let Ok(dir) = fs::read_dir(path) {
             for entry in dir.flatten() {
@@ -45,25 +45,5 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         } else {
             Some(exes)
         }
-    };
-
-    let paths: Vec<&str> = path.split(';').collect();
-    #[cfg(feature = "rayon")]
-    let executables = paths.par_iter().filter_map(search_dir).reduce(
-        || Vec::new(),
-        |mut a, b| {
-            a.extend_from_slice(&b);
-            a
-        },
-    );
-    #[cfg(not(feature = "rayon"))]
-    let executables = paths
-        .iter()
-        .filter_map(search_dir)
-        .fold(Vec::new(), |mut a, b| {
-            a.extend_from_slice(&b);
-            a
-        });
-
-    Ok(executables)
+    })
 }

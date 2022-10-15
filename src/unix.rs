@@ -1,14 +1,13 @@
-use std::{env, env::VarError, fs, os::unix::fs::PermissionsExt};
-
-#[cfg(feature = "rayon")]
-use rayon::prelude::*;
+use std::{env::VarError, fs, os::unix::fs::PermissionsExt};
 
 use crate::Executable;
 
-pub fn executables() -> Result<Vec<Executable>, VarError> {
-    let path = env::var("PATH")?;
+pub fn split_paths(path: &str) -> impl Iterator<Item = &str> {
+    path.split(':')
+}
 
-    let search_dir = |path: &&str| -> Option<Vec<Executable>> {
+pub fn search_dir() -> Result<fn(&str) -> Option<Vec<Executable>>, VarError> {
+    Ok(|path: &str| -> Option<Vec<Executable>> {
         let mut exes = Vec::new();
         if let Ok(dir) = fs::read_dir(path) {
             for entry in dir.flatten() {
@@ -39,30 +38,5 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         } else {
             Some(exes)
         }
-    };
-
-    let paths: Vec<&str> = path.split(':').collect();
-    #[cfg(feature = "rayon")]
-    let executables = paths.par_iter().filter_map(search_dir).reduce(
-        || Vec::new(),
-        |mut a, b| {
-            a.extend_from_slice(&b);
-            a
-        },
-    );
-    #[cfg(not(feature = "rayon"))]
-    let executables = paths
-        .iter()
-        .filter_map(search_dir)
-        .fold(Vec::new(), |mut a, b| {
-            a.extend_from_slice(&b);
-            a
-        });
-
-    Ok(executables)
-}
-
-#[test]
-fn test() {
-    executables();
+    })
 }
