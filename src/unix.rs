@@ -1,16 +1,11 @@
-use std::{env, env::VarError, fs, os::unix::fs::PermissionsExt};
-
-#[cfg(feature = "rayon")]
-use rayon::prelude::*;
+use std::{env::VarError, os::unix::fs::PermissionsExt, path::PathBuf};
 
 use crate::Executable;
 
-pub fn executables() -> Result<Vec<Executable>, VarError> {
-    let path = env::var("PATH")?;
-
-    let search_dir = |path: &&str| -> Option<Vec<Executable>> {
+pub fn search_dir() -> Result<fn(PathBuf) -> Option<Vec<Executable>>, VarError> {
+    Ok(|path: PathBuf| -> Option<Vec<Executable>> {
         let mut exes = Vec::new();
-        if let Ok(dir) = fs::read_dir(path) {
+        if let Ok(dir) = path.read_dir() {
             for entry in dir.flatten() {
                 // We need to call metadata on the path to follow symbolic links
                 if let Ok(metadata) = entry.path().metadata() {
@@ -39,30 +34,5 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
         } else {
             Some(exes)
         }
-    };
-
-    let paths: Vec<&str> = path.split(':').collect();
-    #[cfg(feature = "rayon")]
-    let executables = paths.par_iter().filter_map(search_dir).reduce(
-        || Vec::new(),
-        |mut a, b| {
-            a.extend_from_slice(&b);
-            a
-        },
-    );
-    #[cfg(not(feature = "rayon"))]
-    let executables = paths
-        .iter()
-        .filter_map(search_dir)
-        .fold(Vec::new(), |mut a, b| {
-            a.extend_from_slice(&b);
-            a
-        });
-
-    Ok(executables)
-}
-
-#[test]
-fn test() {
-    executables();
+    })
 }
