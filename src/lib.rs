@@ -2,20 +2,21 @@
 use rayon::prelude::*;
 
 use std::{
-    collections::HashMap,
-    env::{self, VarError},
+    collections::HashSet,
+    env::{self, split_paths, VarError},
+    hash::Hash,
     path::PathBuf,
 };
 
 #[cfg(unix)]
 mod unix;
 #[cfg(unix)]
-use unix::{search_dir, split_path};
+use unix::search_dir;
 
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-use windows::{search_dir, split_path};
+use windows::search_dir;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Executable {
@@ -28,7 +29,7 @@ pub struct Executable {
 /// **Note:** this does not filter out duplicates
 pub fn executables() -> Result<Vec<Executable>, VarError> {
     let path = env::var("PATH")?;
-    let paths = split_path(&path);
+    let paths = split_paths(&path);
 
     let search_dir = search_dir()?;
 
@@ -50,18 +51,43 @@ pub fn executables() -> Result<Vec<Executable>, VarError> {
     Ok(executables)
 }
 
-/// Handles precedence i.e. an entry later in PATH will override an earlier one
+#[derive(Debug, Clone, Eq)]
+struct UniqueExecutable(Executable);
+
+impl PartialEq for UniqueExecutable {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.name == other.0.name
+    }
+}
+
+impl Hash for UniqueExecutable {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.name.hash(state);
+    }
+}
+
+/// Handles precedence i.e. will only return the first entry in PATH for each executable name
 ///
 /// **Note:** this will never use rayon
-pub fn unique_executables() -> Result<HashMap<String, Executable>, VarError> {
+///
+/// Only partially implemented on Windows. It will choose the correct folder but is not guaranteed
+/// to choose the correct executable based on PATHEXT order (e.g. `.exe` before `.bat` when they
+/// share a folder).
+pub fn unique_executables() -> Result<Vec<Executable>, VarError> {
     let path = env::var("PATH")?;
 
-    Ok(split_path(&path)
+    Ok(split_paths(&path)
         .filter_map(search_dir()?)
-        .fold(HashMap::new(), |mut a, b| {
-            a.extend(b.into_iter().map(|e| (e.name.clone(), e)));
-            a
-        }))
+        .flat_map(|dir| dir.into_iter().map(UniqueExecutable))
+        .fold(HashSet::new(), |mut set, executable| {
+            if !set.contains(&executable) {
+                set.insert(executable);
+            };
+            set
+        })
+        .into_iter()
+        .map(|e| e.0)
+        .collect())
 }
 
 #[test]

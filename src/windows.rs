@@ -1,12 +1,8 @@
-use std::{collections::HashSet, env, env::VarError, fs};
+use std::{collections::HashSet, env, env::VarError, path::PathBuf};
 
 use crate::Executable;
 
-pub fn split_path(path: &str) -> impl Iterator<Item = &str> {
-    path.split(';')
-}
-
-pub fn search_dir() -> Result<impl Fn(&str) -> Option<Vec<Executable>>, VarError> {
+pub fn search_dir() -> Result<impl Fn(PathBuf) -> Option<Vec<Executable>>, VarError> {
     let pathext = env::var("PATHEXT")?;
 
     let exts: HashSet<String> = pathext
@@ -14,9 +10,9 @@ pub fn search_dir() -> Result<impl Fn(&str) -> Option<Vec<Executable>>, VarError
         .map(|s| s.trim_start_matches('.').to_string())
         .collect();
 
-    Ok(move |path: &str| -> Option<Vec<Executable>> {
+    Ok(move |path: PathBuf| -> Option<Vec<Executable>> {
         let mut exes = Vec::new();
-        if let Ok(dir) = fs::read_dir(path) {
+        if let Ok(dir) = path.read_dir() {
             for entry in dir.flatten() {
                 if let Ok(metdata) = entry.metadata() {
                     if !metdata.is_file() {

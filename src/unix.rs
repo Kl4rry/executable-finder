@@ -1,15 +1,11 @@
-use std::{env::VarError, fs, os::unix::fs::PermissionsExt};
+use std::{env::VarError, os::unix::fs::PermissionsExt, path::PathBuf};
 
 use crate::Executable;
 
-pub fn split_path(path: &str) -> impl Iterator<Item = &str> {
-    path.split(':')
-}
-
-pub fn search_dir() -> Result<fn(&str) -> Option<Vec<Executable>>, VarError> {
-    Ok(|path: &str| -> Option<Vec<Executable>> {
+pub fn search_dir() -> Result<fn(PathBuf) -> Option<Vec<Executable>>, VarError> {
+    Ok(|path: PathBuf| -> Option<Vec<Executable>> {
         let mut exes = Vec::new();
-        if let Ok(dir) = fs::read_dir(path) {
+        if let Ok(dir) = path.read_dir() {
             for entry in dir.flatten() {
                 // We need to call metadata on the path to follow symbolic links
                 if let Ok(metadata) = entry.path().metadata() {
